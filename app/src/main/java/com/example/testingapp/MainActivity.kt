@@ -73,8 +73,8 @@ fun ExpandableList(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        item {
-            Row {
+        item(key = "Speed box") {
+            Row(modifier = Modifier.animateItem()) {
                 Button(onClick = { speedVariant = 0 }) {
                     Text("Speed 0")
                 }
@@ -87,8 +87,8 @@ fun ExpandableList(
                 Text("Speed $speedVariant")
             }
         }
-        item {
-            Row {
+        item(key = "ratio box") {
+            Row(modifier = Modifier.animateItem()) {
                 Button(onClick = { ratioVariant = 0 }) {
                     Text("ratio 0")
                 }
@@ -101,8 +101,8 @@ fun ExpandableList(
                 Text("ratio $ratioVariant")
             }
         }
-        item {
-            Row {
+        item(key = "animationVariant box") {
+            Row(modifier = Modifier.animateItem()) {
                 Button(onClick = { animationVariant = 0 }) {
                     Text("spring")
                 }
@@ -113,8 +113,8 @@ fun ExpandableList(
             }
         }
         expanded.forEachIndexed { index, value ->
-            item {
-                Row {
+            item(key = "title $index") {
+                Row(modifier = Modifier.animateItem()) {
                     Box(
                         modifier = Modifier
                             .padding(end = 12.dp)
@@ -164,21 +164,11 @@ fun ExpandableList(
                                     )
                                     else -> tween(
                                         durationMillis = setAnimationSpeed(speedVariant).toInt(),
+                                        delayMillis = 1000*index,
                                         easing = FastOutSlowInEasing
                                     )
                                 },
-                                placementSpec =
-                                when (animationVariant) {
-                                    0 -> spring(
-                                        dampingRatio = setAnimationRatio(ratioVariant),
-                                        stiffness = setAnimationSpeed(speedVariant)
-                                    )
-
-                                    else -> tween(
-                                        durationMillis = setAnimationSpeed(speedVariant).toInt(),
-                                        easing = FastOutSlowInEasing
-                                    )
-                                }
+                                placementSpec = null
                             )
                     ) {
                         Text(text = item)
