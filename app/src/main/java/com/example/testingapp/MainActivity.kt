@@ -4,9 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,15 +18,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,15 +37,43 @@ class MainActivity : ComponentActivity() {
         setContent {
             TestingAppTheme {
                 ExpandableList(
-                    fixedContent = {
-                        Text(
-                            text = "Смогу ли я просматривать видео с камер, находясь в другом городе или за границей?",
-                            modifier = Modifier.fillMaxWidth(),
+                    expandableContentInList =
+                    listOf(
+                        Pair(
+                            {
+                                Text(
+                                    text = "Заголовок 1",
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            },
+                            List(10) { index ->
+                                { Text(index.toString()) }
+                            }
+                        ),
+                        Pair(
+                            {
+                                Text(
+                                    text = "Заголовок 2",
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            },
+                            List(10) { index ->
+                                { Text(index.toString()) }
+                            }
+                        ),
+                        Pair(
+                            {
+                                Text(
+                                    text = "Заголовок 3",
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            },
+                            List(10) { index ->
+                                { Text(index.toString()) }
+                            }
                         )
-                    },
-                    expandableContentInList = List(10) { index ->
-                        index.toString()
-                    }
+                    )
+
                 )
             }
         }
@@ -62,56 +83,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ExpandableList(
     onExpandOrCollapseClick: (() -> Unit)? = null,
-    fixedContent: @Composable () -> Unit,
-    expandableContentInList: List<String>,
+    expandableContentInList: List<Pair<@Composable () -> Unit, List<@Composable () -> Unit>>>,
 ) {
-    val expanded = remember { mutableStateListOf(false, false, false) }
-    var speedVariant by remember { mutableIntStateOf(0) }
-    var ratioVariant by remember { mutableIntStateOf(0) }
-    var animationVariant by remember { mutableIntStateOf(0) }
+    val expanded = remember { List(expandableContentInList.size){false}.toMutableStateList() }
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        item(key = "Speed box") {
-            Row(modifier = Modifier.animateItem()) {
-                Button(onClick = { speedVariant = 0 }) {
-                    Text("Speed 0")
-                }
-                Button(onClick = { speedVariant = 1 }) {
-                    Text("Speed 1")
-                }
-                Button(onClick = { speedVariant = 2 }) {
-                    Text("Speed 2")
-                }
-                Text("Speed $speedVariant")
-            }
-        }
-        item(key = "ratio box") {
-            Row(modifier = Modifier.animateItem()) {
-                Button(onClick = { ratioVariant = 0 }) {
-                    Text("ratio 0")
-                }
-                Button(onClick = { ratioVariant = 1 }) {
-                    Text("ratio 1")
-                }
-                Button(onClick = { ratioVariant = 2 }) {
-                    Text("ratio 2")
-                }
-                Text("ratio $ratioVariant")
-            }
-        }
-        item(key = "animationVariant box") {
-            Row(modifier = Modifier.animateItem()) {
-                Button(onClick = { animationVariant = 0 }) {
-                    Text("spring")
-                }
-                Button(onClick = { animationVariant = 1 }) {
-                    Text("tween")
-                }
-                Text(if (animationVariant == 0) "spring" else "tween")
-            }
-        }
         expanded.forEachIndexed { index, value ->
             item(key = "title $index") {
                 Row(modifier = Modifier.animateItem()) {
@@ -121,7 +99,7 @@ fun ExpandableList(
                             .align(Alignment.CenterVertically)
                             .weight(1f)
                     ) {
-                        fixedContent()
+                        expandableContentInList[index].first()
                     }
                     Crossfade(
                         expanded,
@@ -149,46 +127,21 @@ fun ExpandableList(
             }
             if (value) {
                 itemsIndexed(
-                    items = expandableContentInList,
+                    items = expandableContentInList[index].second,
                     key = { _, item -> "$item$index" }) { _, item ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .animateItem(
-                                fadeInSpec =
-                                when (animationVariant) {
-                                    0 -> spring(
-                                        dampingRatio = setAnimationRatio(ratioVariant),
-                                        stiffness = setAnimationSpeed(speedVariant)
-                                    )
-                                    else -> tween(
-                                        durationMillis = setAnimationSpeed(speedVariant).toInt(),
-                                        delayMillis = 1000*index,
-                                        easing = FastOutSlowInEasing
-                                    )
-                                },
-                                placementSpec = null
                             )
                     ) {
-                        Text(text = item)
+                        item()
                     }
                 }
             }
         }
     }
-}
-
-private fun setAnimationRatio(ratioIndex: Int) = when (ratioIndex) {
-    0 -> Spring.DampingRatioLowBouncy
-    1 -> Spring.DampingRatioMediumBouncy
-    else -> Spring.DampingRatioHighBouncy
-}
-
-private fun setAnimationSpeed(speedIndex: Int) = when (speedIndex) {
-    0 -> Spring.StiffnessVeryLow
-    1 -> Spring.StiffnessMedium
-    else -> Spring.StiffnessHigh
 }
 
 private const val AnimationDurationMillis = 200
@@ -198,15 +151,40 @@ private const val AnimationDurationMillis = 200
 internal fun ExpandableCardPreview() {
     TestingAppTheme {
         ExpandableList(
-            fixedContent = {
-                Text(
-                    text = "Смогу ли я просматривать видео с камер, находясь в другом городе или за границей?",
-                )
-            },
             expandableContentInList = listOf(
-                "Присматривайте за домом и участком. Если кто-то проникнет во двор, вы тут же об этом узнаете.",
-                "Присматривайте за домом и участком. Если кто-то проникнет во двор, вы тут же об этом узнаете.",
-                "Присматривайте за домом и участком. Если кто-то проникнет во двор, вы тут же об этом узнаете.",
+                Pair(
+                    {
+                        Text(
+                            text = "Заголовок 1",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                    List(10) { index ->
+                        { Text(index.toString()) }
+                    }
+                ),
+                Pair(
+                    {
+                        Text(
+                            text = "Заголовок 2",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                    List(10) { index ->
+                        { Text(index.toString()) }
+                    }
+                ),
+                Pair(
+                    {
+                        Text(
+                            text = "Заголовок 3",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                    List(10) { index ->
+                        { Text(index.toString()) }
+                    }
+                )
             )
         )
     }
@@ -217,7 +195,6 @@ internal fun ExpandableCardPreview() {
 internal fun ExpandableCardSkeletonPreview() {
     TestingAppTheme {
         ExpandableList(
-            fixedContent = {},
             expandableContentInList = listOf()
         )
     }
